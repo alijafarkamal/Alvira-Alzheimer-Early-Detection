@@ -1,0 +1,13 @@
+flask==2.3.3
+flask-cors==4.0.0
+numpy>=1.21.0
+pandas>=1.3.0
+scikit-learn>=1.0.0
+opencv-python>=4.5.0
+Pillow>=8.0.0
+werkzeug==2.3.7
+torch>=1.12.0
+torchaudio>=0.12.0
+librosa>=0.9.0
+opensmile>=2.6.0
+joblib>=1.1.0 
