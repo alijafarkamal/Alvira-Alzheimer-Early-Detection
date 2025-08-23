@@ -53,6 +53,8 @@ Thumbs.db
 # Logs
 *.log
 logs/
+backend.log
+frontend.log
 
 # Runtime data
 pids

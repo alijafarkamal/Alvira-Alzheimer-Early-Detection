@@ -27,35 +27,54 @@ echo "✅ Prerequisites check passed"
 echo "🔄 Cleaning up existing processes..."
 pkill -f "python3 app.py" 2>/dev/null
 pkill -f "vite" 2>/dev/null
+sleep 2
 
 # Start backend
 echo "🔧 Starting backend server..."
 cd backend
-python3 app.py &
+python3 app.py > ../backend.log 2>&1 &
 BACKEND_PID=$!
 cd ..
 
-# Wait for backend to start
+# Wait for backend to start with retries
 echo "⏳ Waiting for backend to start..."
-sleep 5
+MAX_RETRIES=30
+RETRY_COUNT=0
 
-# Check if backend is running
-if curl -s http://localhost:8000/api/health > /dev/null; then
-    echo "✅ Backend server started successfully"
-else
-    echo "❌ Backend server failed to start"
+while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+    if curl -s http://localhost:8000/api/health > /dev/null 2>&1; then
+        echo "✅ Backend server started successfully"
+        break
+    else
+        RETRY_COUNT=$((RETRY_COUNT + 1))
+        echo "⏳ Waiting... (attempt $RETRY_COUNT/$MAX_RETRIES)"
+        sleep 2
+    fi
+done
+
+if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+    echo "❌ Backend server failed to start after $MAX_RETRIES attempts"
+    echo "📋 Backend logs:"
+    cat backend.log
     kill $BACKEND_PID 2>/dev/null
     exit 1
 fi
 
 # Start frontend
 echo "🎨 Starting frontend development server..."
-npm run dev &
+npm run dev > frontend.log 2>&1 &
 FRONTEND_PID=$!
 
 # Wait for frontend to start
 echo "⏳ Waiting for frontend to start..."
 sleep 10
+
+# Check if frontend is running
+if curl -s http://localhost:3000 > /dev/null 2>&1; then
+    echo "✅ Frontend server started successfully"
+else
+    echo "⚠️ Frontend may still be starting up..."
+fi
 
 echo ""
 echo "🎉 Alvira is now running!"
@@ -63,6 +82,10 @@ echo "=================================================="
 echo "🌐 Frontend: http://localhost:3000"
 echo "🔧 Backend API: http://localhost:8000"
 echo "📊 Health Check: http://localhost:8000/api/health"
+echo ""
+echo "📋 Logs:"
+echo "   Backend:  tail -f backend.log"
+echo "   Frontend: tail -f frontend.log"
 echo ""
 echo "Press Ctrl+C to stop all services"
 
